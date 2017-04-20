@@ -3,9 +3,7 @@
 
 #sequence = ''.join(stack_machine.stacks[stack_idx])
 #sequence += '=' * (self._timesteps - len(sequence))
-#dataset = [DataEntry(sequence)]
-#self._environment.use_dataset(dataset)
 
-#result_stacks = self.process()
+#result_stacks = self.process(sequence)
 
 #stack_machine.stacks[stack_idx] = result_stacks[0]

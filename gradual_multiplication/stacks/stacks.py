@@ -274,14 +274,27 @@ class StackMachine:
                     self._zero_state = self._session.run(self._controller.get_zero_state())
 
                 def __call__(self, stack_machine, symbol, stack_idx):
+                    """ Perform the operation.
+                        
+                    :param stack_machine: a StackMachine instance containing the stacks of the top-level controller
+                    :param symbol: the current symbol (hint: for correctly called addition it's likely to be '=')
+                    :param stack_idx: index of the chosen stack
+                    """
                     # TODO: Prepare input for the learned model.
+                    # stack_machine.stacks is a cool place, check it out
+                    # The sequence should have length of self._timesteps
+                    # '=' is the padding symbol
 
-                    # This expects self._environment to be prepared.
-                    result_stacks = self.process()
+                    # sequence should contain the converted problem
+                    result_stacks = self.process(sequence)
 
                     # TODO: Put the result back to the stack machine.
+                    # Remember that the first stack contains the output.
 
-                def process(self):
+                def process(self, sequence):
+                    dataset = [DataEntry(sequence)]
+                    self._environment.use_dataset(dataset)
+
                     # Reset the environment and get initial symbol and stacks (not encoded).
                     symbol, stacks = self._environment.reset()
 
@@ -374,6 +387,10 @@ class StackMachine:
             For a wrong selection, -1.0 is given. For a correct selection, the reward is linearly scaled based on
             confidence: 1-confidence, with 0.01 as lower bound.
             """
+
+            if data_entry.selections is None:
+                return 0
+
             desired_action, desired_stack = data_entry.selections[timestep]
             positive = 1
             negative = -1

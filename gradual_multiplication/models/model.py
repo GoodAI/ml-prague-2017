@@ -7,8 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from controller.controller import RecurrentAgent
-from stacks.stacks import StackEnvironment, StackMachine
-
+from stacks.stacks import StackEnvironment, StackMachine, DataEntry
 
 TrainingStats = namedtuple('TrainingStats', ['name', 'accuracy', 'labels'])
 
@@ -299,7 +298,13 @@ class Model:
 
         return stats
 
-    def test(self, session):
+    def run_single(self, session, sequence, answer):
+        sequence = sequence + '=' * (self.dataset.timesteps - len(sequence))
+
+        self.dataset.testing_data = [DataEntry(sequence, answer)]
+        self.test(session, debug=True)
+
+    def test(self, session, debug=False):
         num_oks = 0
 
         agent = self.inference_agent
@@ -338,10 +343,17 @@ class Model:
 
             data_entry = environment.current_data_entry
             result = environment.result(length=len(data_entry.answer))
+
+            if debug:
+                print('Sequence: {}, correct answer: {}, model answer: {}'.format(data_entry.sequence,
+                                                                                  data_entry.answer, result))
+                return
+
             if result == data_entry.answer:
                 num_oks += 1
             else:
-                print('sequence: {}, answer: {}, result: {}'.format(data_entry.sequence, data_entry.answer, result))
+                print('sequence: {}, correct answer: {}, model answer: {}'.format(data_entry.sequence,
+                                                                                  data_entry.answer, result))
                 print("INCORRECT")
 
         print("Correct: {}/{}".format(num_oks, len(self.dataset.testing_data)))

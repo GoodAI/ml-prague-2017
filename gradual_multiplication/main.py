@@ -23,6 +23,70 @@ def run_experiment(session, model, run, retrain):
     return stats
 
 
+def run_example(session, model, example, ans):
+    model.run_single(session, "".join(example), ans)
+
+
+def validate(expr):
+    # Last minute code :)
+    add_pattern = ['n', 'n', '+', 'n', 'n']
+    mult_pattern = ['n', 'n', '+', 'n']
+
+    idx = 0
+    add = True
+    mult = False
+    data = None
+    try:
+        for char in expr:
+            if add_pattern[idx] == 'n':
+                if not char.isnumeric():
+                    add = False
+                    break
+            elif add_pattern[idx] == '+':
+                if char != '+':
+                    add = False
+                    break
+            idx += 1
+    except:
+        add = False
+
+    if not add:
+        idx = 0
+        mult = True
+        try:
+            for char in expr:
+                if mult_pattern[idx] == 'n':
+                    if not char.isnumeric():
+                        mult = False
+                        break
+                elif mult_pattern[idx] == '*':
+                    if char != '*':
+                        mult = False
+                        break
+                idx += 1
+        except:
+            mult = False
+
+    if not add and not mult:
+        print("Please use the correct format (xx+xx or xx*x)")
+        return False, None, None, 0
+
+    ans = 0
+    if add:
+        data = expr.split("+")
+        ans = int(data[0]) + int(data[1])
+
+    if mult:
+        data = expr.split("*")
+        ans = int(data[0]) * int(data[1])
+
+    if ans > 99:
+        print("Please make sure the result is below 100")
+        return False, None, None, 0
+
+    return True, mult, data, ans
+
+
 def main(args):
     run_addition = not args.skip_add
     run_multiplication = not args.skip_mult
@@ -64,19 +128,41 @@ def main(args):
         # Initialize all variables, might be overwritten by loaded ones.
         session.run(tf.global_variables_initializer())
 
-        # Run addition if required and plot results.
-        addition_stats = run_experiment(session, addition_model, run_addition, args.retrain_add)
-        if addition_stats is not None:
-            plot_stats(addition_model.name, [addition_stats])
+        if not args.i:
+            # Run addition if required and plot results.
+            addition_stats = run_experiment(session, addition_model, run_addition, args.retrain_add)
+            if addition_stats is not None:
+                plot_stats(addition_model.name, [addition_stats])
 
-        # Run multiplication if required.
-        multiplication_stats = run_experiment(session, multiplication_model, run_multiplication, args.retrain_mult)
+            # Run multiplication if required.
+            multiplication_stats = run_experiment(session, multiplication_model, run_multiplication, args.retrain_mult)
 
-        # Run non-gradual multiplication if required.
-        non_gradual_stats = run_experiment(session, non_gradual_model, run_non_gradual, args.retrain_non_gradual)
+            # Run non-gradual multiplication if required.
+            non_gradual_stats = run_experiment(session, non_gradual_model, run_non_gradual, args.retrain_non_gradual)
 
-        if multiplication_stats is not None or non_gradual_stats is not None:
-            plot_stats(multiplication_model.name, [multiplication_stats, non_gradual_stats])
+            if multiplication_stats is not None or non_gradual_stats is not None:
+                plot_stats(multiplication_model.name, [multiplication_stats, non_gradual_stats])
+
+        else:
+            print("Starting in interactive mode.")
+
+            addition_model.try_load(session)
+            multiplication_model.try_load(session)
+
+            while True:
+                expr = input("Please enter either an expression in the form xx+xx or xx*x (input 'q' to exit): ")
+                if expr == 'q':
+                    return
+
+                valid, mult, expr, ans = validate(expr)
+
+                if not valid:
+                    return
+
+                if mult:
+                    run_example(session, multiplication_model, expr, str(ans))
+                else:
+                    run_example(session, addition_model, expr, str(ans))
 
 
 if __name__ == '__main__':
@@ -123,6 +209,8 @@ if __name__ == '__main__':
     parser.add_argument('--skip_add', action='store_const', const=True)
     parser.add_argument('--skip_mult', action='store_const', const=True)
     parser.add_argument('--run_non_gradual', action='store_const', const=True)
+
+    parser.add_argument('--i', action='store_const', const=True)
 
     parsed_args = parser.parse_args()
 
