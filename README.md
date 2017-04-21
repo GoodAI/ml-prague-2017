@@ -29,6 +29,8 @@ Then, install pip packages the repository folder:
 
 There are two examples that we will look at. A full description of the models is included in the workshop presentation.
 
+The presentation is a public google doc [here](https://docs.google.com/presentation/d/1C0ZkWH4-EAN4JYTDsYZxZ67yq-vth3ydeaM7kFgUnw4/edit?usp=sharing)
+
 ### Gradual multiplication
 
 The **gradual_multiplication** folder contains an experiment that learns double-digit addition using intrinsic operations and then uses this as an additional operation to learn double-by-single-digit multiplication.
